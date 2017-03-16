@@ -28,7 +28,7 @@ $.fn.cycle.transitions.carousel = {
     // transition API impl
     preInit: function( opts ) {
         opts.hideNonActive = false;
-        
+
         opts.container.on('cycle-destroyed', $.proxy(this.onDestroy, opts.API));
         // override default API implementation
         opts.API.stopTransition = this.stopTransition;
@@ -36,7 +36,7 @@ $.fn.cycle.transitions.carousel = {
         // issue #10
         for (var i=0; i < opts.startingSlide; i++) {
             opts.container.append( opts.slides[0] );
-        }        
+        }
     },
 
     // transition API impl
@@ -61,6 +61,7 @@ $.fn.cycle.transitions.carousel = {
             .append( opts.slides );
 
         opts._carouselWrap = wrap;
+        opts._carouselWrapWidth = wrap.outerWidth();
 
         if ( !vert )
             wrap.css('white-space', 'nowrap');
@@ -76,7 +77,9 @@ $.fn.cycle.transitions.carousel = {
                     wrap.append( opts.slides[i].cloneNode(true) );
                 }
                 i = opts.slideCount;
+                opts._carouselWrapWidth = 0;
                 while ( i-- ) { // #160, #209
+                    opts._carouselWrapWidth += $(opts.slides[i]).outerWidth();
                     wrap.prepend( opts.slides[i].cloneNode(true) );
                 }
             }
@@ -119,18 +122,20 @@ $.fn.cycle.transitions.carousel = {
         //     // fluid; don't size the container
         // }
 
-        offset = ( opts.carouselOffset || 0 );
+        offset = Math.floor($(window).width()/2); //( opts.carouselOffset || 0 );
+        offset -= opts._carouselWrapWidth*2;
+
         if ( opts.allowWrap !== false ) {
             if ( opts.carouselSlideDimension ) {
-                offset -= ( (opts.slideCount + opts.currSlide) * opts.carouselSlideDimension );
-            }
-            else {
+                offset -= Math.floor(opts.currSlide/2);
+            } else {
                 // calculate offset based on actual slide dimensions
                 tmp = opts._carouselWrap.children();
-                for (j=0; j < (opts.slideCount + opts.currSlide); j++) {
-                    offset -= $(tmp[j])[vert?'outerHeight':'outerWidth'](true);
-                }
+                offset -= Math.floor($(tmp[opts.currSlide])['outerWidth'](true)/2);
             }
+        } else {
+            tmp = opts._carouselWrap.children();
+            offset -= Math.floor($(tmp[opts.currSlide])['outerWidth'](true)/2);
         }
 
         opts._carouselWrap.css( vert ? 'top' : 'left', offset );
@@ -188,7 +193,7 @@ $.fn.cycle.transitions.carousel = {
             else if ( hops < 0 && opts.currSlide > maxCurr ) {
                 hops += opts.currSlide - maxCurr;
             }
-            else 
+            else
                 currSlide = opts.currSlide;
 
             moveBy = this.getScroll( opts, vert, currSlide, hops );
@@ -197,12 +202,12 @@ $.fn.cycle.transitions.carousel = {
         else {
             if ( fwd && opts.nextSlide === 0 ) {
                 // moving from last slide to first
-                moveBy = this.getDim( opts, opts.currSlide, vert );
+                moveBy = Math.floor(this.getDim( opts, opts.currSlide, vert ) / 2) + Math.floor(this.getDim( opts, 0, vert ) / 2);
                 callback = this.genCallback( opts, fwd, vert, callback );
             }
             else if ( !fwd && opts.nextSlide == opts.slideCount - 1 ) {
                 // moving from first slide to last
-                moveBy = this.getDim( opts, opts.currSlide, vert );
+                moveBy = Math.floor(this.getDim( opts, opts.currSlide, vert ) / 2) + Math.floor(this.getDim( opts, opts.slideCount -1 , vert ) / 2);
                 callback = this.genCallback( opts, fwd, vert, callback );
             }
             else {
@@ -230,20 +235,29 @@ $.fn.cycle.transitions.carousel = {
 
         if (hops > 0) {
             for (i=currSlide; i < currSlide+hops; i++)
-                moveBy += this.getDim( opts, i, vert);
+                moveBy += Math.floor(this.getDim( opts, i +1 , vert)/2 + this.getDim( opts, i , vert) /2);
         }
         else {
             for (i=currSlide; i > currSlide+hops; i--)
-                moveBy += this.getDim( opts, i, vert);
+                moveBy += Math.floor(this.getDim( opts, i - 1 , vert)/2 + this.getDim( opts, i , vert) /2);
         }
         return moveBy;
     },
 
     genCallback: function( opts, fwd, vert, callback ) {
         // returns callback fn that resets the left/top wrap position to the "real" slides
+
         return function() {
-            var pos = $(opts.slides[opts.nextSlide]).position();
-            var offset = 0 - pos[vert?'top':'left'] + (opts.carouselOffset || 0);
+            var offset = Math.floor($(window).width()/2); //( opts.carouselOffset || 0 );
+            var tmp = opts._carouselWrap.children();
+            if(opts.currSlide === 0 && opts.nextSlide === opts.slideCount -1) {
+                // rewind
+                offset -= opts._carouselWrapWidth*3 - Math.floor($(tmp[opts.slideCount -1])['outerWidth'](true)/2);
+            } else {
+                // forward
+                offset -= opts._carouselWrapWidth*2 + Math.floor($(tmp[0])['outerWidth'](true)/2);
+            }
+
             opts._carouselWrap.css( opts.carouselVertical ? 'top' : 'left', offset );
             callback();
         };
