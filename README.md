@@ -1,4 +1,4 @@
-# Cycle2 - 2nd Generation Cycling!
+# Cycle2 - 2nd Generation Cycling - centered carousel!
 NOTE: modified version, carousel centered (only works with data-cycle-carousel-fluid=false that is default setting)
 
 ## Getting Started
