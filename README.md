@@ -1,4 +1,5 @@
 # Cycle2 - 2nd Generation Cycling!
+NOTE: modified version, carousel centered (only works with data-cycle-carousel-fluid=false that is default setting)
 
 ## Getting Started
 Download either the [production version][min] or the [development version][max] of Cycle2.
